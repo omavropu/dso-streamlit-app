@@ -93,21 +93,21 @@ with st.sidebar:
         st.info("Using default simulated data. Upload your own CSV to analyze.")
         if st.session_state.data is None:
             # Generate sample data if none is loaded
-            np.random.seed(42)
+            rng = np.random.default_rng(42) # Use new random generator
             n_samples = 200
             simulated_data = {
                 'Customer ID': [f'CUST_{i}' for i in range(1, n_samples + 1)],
-                'Payment Terms Days': np.random.choice([30, 60, 90, 120], size=n_samples, p=[0.4, 0.3, 0.2, 0.1]),
-                'Invoice Error Rate': np.random.uniform(0.01, 0.15, size=n_samples),
-                'Forecast Accuracy': np.random.uniform(0.75, 0.99, size=n_samples),
-                'Contract Extension Days': np.random.choice([0, 15, 30], size=n_samples, p=[0.8, 0.15, 0.05]),
-                'Avg Days Late Last3 Days': np.random.poisson(lam=5, size=n_samples)
+                'Payment Terms Days': rng.choice([30, 60, 90, 120], size=n_samples, p=[0.4, 0.3, 0.2, 0.1]),
+                'Invoice Error Rate': rng.uniform(0.01, 0.15, size=n_samples),
+                'Forecast Accuracy': rng.uniform(0.75, 0.99, size=n_samples),
+                'Contract Extension Days': rng.choice([0, 15, 30], size=n_samples, p=[0.8, 0.15, 0.05]),
+                'Avg Days Late Last3 Days': rng.poisson(lam=5, size=n_samples)
             }
             sim_df = pd.DataFrame(simulated_data)
             sim_df['DSO actual Days'] = (
                 sim_df['Payment Terms Days'] + sim_df['Avg Days Late Last3 Days'] +
                 (sim_df['Invoice Error Rate'] * 100) + ((1 - sim_df['Forecast Accuracy']) * 50) +
-                (sim_df['Contract Extension Days'] * 0.5) + np.random.normal(0, 5, size=n_samples)
+                (sim_df['Contract Extension Days'] * 0.5) + rng.normal(0, 5, size=n_samples)
             )
             sim_df['DSO actual Days'] = sim_df['DSO actual Days'].apply(lambda x: max(0, x)).round(1)
             st.session_state.data = sim_df
@@ -280,9 +280,11 @@ else:
             
             st.subheader("Global Feature Impact")
             st.markdown("The SHAP summary plot shows the impact of each feature on the model's output. Each point is a single observation. Red means a high feature value, blue means low.")
-            st.pyplot(shap.summary_plot(shap_values, st.session_state.X_test, show=False))
-            plt.gcf().set_size_inches(10, 5) # Adjust figure size
-            plt.tight_layout() # Adjust layout
+            # Create a figure for the SHAP summary plot
+            fig_summary = plt.figure()
+            shap.summary_plot(shap_values, st.session_state.X_test, show=False)
+            st.pyplot(fig_summary)
+            plt.close(fig_summary)
             
             st.subheader("Individual Prediction Breakdown")
             st.markdown("Select a single observation from the test set to see how the model arrived at its prediction.")
@@ -291,11 +293,16 @@ else:
             
             st.markdown(f"**Explaining Observation {observation_index}**")
             
-            # Force plot
-            fig, ax = plt.subplots(nrows=1, ncols=1)
-            shap.force_plot(explainer.expected_value, shap_values.values[observation_index,:], st.session_state.X_test.iloc[observation_index,:], show=False, matplotlib=True)
-            st.pyplot(fig, bbox_inches='tight')
-            plt.close(fig)
+            # Force plot - Capture the figure object returned by shap.force_plot
+            force_plot_fig = shap.force_plot(
+                explainer.expected_value, 
+                shap_values.values[observation_index,:], 
+                st.session_state.X_test.iloc[observation_index,:], 
+                show=False, 
+                matplotlib=True
+            )
+            st.pyplot(force_plot_fig, bbox_inches='tight')
+            plt.close(force_plot_fig)
 
 
             # Display actual vs predicted
