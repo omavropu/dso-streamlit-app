@@ -6,3 +6,4 @@ shap
 plotly
 scikit-learn
 statsmodels
+matplotlib

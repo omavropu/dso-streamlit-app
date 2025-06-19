@@ -9,6 +9,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LinearRegression
 from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
 import statsmodels.api as sm
+import matplotlib.pyplot as plt
 
 # --- Page Configuration ---
 st.set_page_config(
@@ -279,8 +280,9 @@ else:
             
             st.subheader("Global Feature Impact")
             st.markdown("The SHAP summary plot shows the impact of each feature on the model's output. Each point is a single observation. Red means a high feature value, blue means low.")
-            fig_summary, ax_summary = go.Figure(), go.Figure()
             st.pyplot(shap.summary_plot(shap_values, st.session_state.X_test, show=False))
+            plt.gcf().set_size_inches(10, 5) # Adjust figure size
+            plt.tight_layout() # Adjust layout
             
             st.subheader("Individual Prediction Breakdown")
             st.markdown("Select a single observation from the test set to see how the model arrived at its prediction.")
@@ -290,7 +292,11 @@ else:
             st.markdown(f"**Explaining Observation {observation_index}**")
             
             # Force plot
-            st.pyplot(shap.force_plot(explainer.expected_value, shap_values.values[observation_index,:], st.session_state.X_test.iloc[observation_index,:], show=False, matplotlib=True))
+            fig, ax = plt.subplots(nrows=1, ncols=1)
+            shap.force_plot(explainer.expected_value, shap_values.values[observation_index,:], st.session_state.X_test.iloc[observation_index,:], show=False, matplotlib=True)
+            st.pyplot(fig, bbox_inches='tight')
+            plt.close(fig)
+
 
             # Display actual vs predicted
             actual_val = st.session_state.y_test.iloc[observation_index]
