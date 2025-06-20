@@ -172,7 +172,7 @@ else:
     tab1, tab2, tab3, tab4 = st.tabs(["📊 Exploratory Data Analysis", "🤖 Model Performance", "🧠 Prediction Explanations", "🔮 DSO Simulation"])
 
     with tab1:
-        st.header("Exploratory Data Analysis")
+        st.header("Exp Data Analysis")
         st.markdown("A first look at your data.")
         
         st.subheader("Data Preview")
