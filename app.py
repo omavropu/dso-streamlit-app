@@ -180,28 +180,28 @@ else:
 
         st.subheader("Summary Statistics")
         st.dataframe(df.describe())
-if len(st.session_state.features) > 0:
-    st.subheader("Visualizations")
-    
-    # Histogram
-    st.markdown("#### Feature Distributions")
-    feature_to_plot = st.selectbox("Select a feature to see its distribution", st.session_state.features)
-    fig_hist = px.histogram(df, x=feature_to_plot, marginal="box", title=f"Distribution of {feature_to_plot}", color_discrete_sequence=px.colors.qualitative.Pastel)
-    st.plotly_chart(fig_hist, use_container_width=True)
+        if len(st.session_state.features) > 0:
+            st.subheader("Visualizations")
+            
+            # Histogram
+            st.markdown("#### Feature Distributions")
+            feature_to_plot = st.selectbox("Select a feature to see its distribution", st.session_state.features)
+            fig_hist = px.histogram(df, x=feature_to_plot, marginal="box", title=f"Distribution of {feature_to_plot}", color_discrete_sequence=px.colors.qualitative.Pastel)
+            st.plotly_chart(fig_hist, use_container_width=True)
 
-    # Correlation Matrix
-    st.markdown("#### Correlation Heatmap")
-    corr_df = df[st.session_state.features + [target_variable]]
-    corr_matrix = corr_df.corr()
-    fig_heatmap = go.Figure(data=go.Heatmap(
-        z=corr_matrix.values,
-        x=corr_matrix.columns,
-        y=corr_matrix.columns,
-        colorscale='Viridis',
-        colorbar=dict(title='Correlation')
-    ))
-    fig_heatmap.update_layout(title="Feature Correlation Matrix")
-    st.plotly_chart(fig_heatmap, use_container_width=True)
+            # Correlation Matrix
+            st.markdown("#### Correlation Heatmap")
+            corr_df = df[st.session_state.features + [target_variable]]
+            corr_matrix = corr_df.corr()
+            fig_heatmap = go.Figure(data=go.Heatmap(
+                z=corr_matrix.values,
+                x=corr_matrix.columns,
+                y=corr_matrix.columns,
+                colorscale='Viridis',
+                colorbar=dict(title='Correlation')
+            ))
+            fig_heatmap.update_layout(title="Feature Correlation Matrix")
+            st.plotly_chart(fig_heatmap, use_container_width=True)
 
 
         
