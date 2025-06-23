@@ -182,7 +182,7 @@ else:
         st.dataframe(df.describe())
 
         if len(st.session_state.features) > 0:
-            st.subheader("Vis")
+            st.subheader("Visualizations")
             col1, col2 = st.columns(2)
             with col1:
                 st.markdown("#### Feature Distributions")
@@ -190,10 +190,6 @@ else:
                 fig_hist = px.histogram(df, x=feature_to_plot, marginal="box", title=f"Distribution of {feature_to_plot}", color_discrete_sequence=px.colors.qualitative.Pastel)
                 st.plotly_chart(fig_hist, use_container_width=True)
             with col2:
-                st.markdown(f"#### Relationship with DSO")
-                fig_scatter = px.scatter(df, x=feature_to_plot, y=target_variable, trendline="ols", title=f"{feature_to_plot} vs. {target_variable}", color_discrete_sequence=px.colors.qualitative.Pastel1)
-                st.plotly_chart(fig_scatter, use_container_width=True)
-
             st.markdown("#### Correlation Heatmap")
             corr_df = df[st.session_state.features + [target_variable]]
             corr_matrix = corr_df.corr()
