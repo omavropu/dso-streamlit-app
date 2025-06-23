@@ -182,7 +182,7 @@ else:
         st.dataframe(df.describe())
 
         if len(st.session_state.features) > 0:
-            st.subheader("Visualizations")
+            st.subheader("Vis")
             col1, col2 = st.columns(2)
             with col1:
                 st.markdown("#### Feature Distributions")
