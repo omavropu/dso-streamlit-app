@@ -12,12 +12,19 @@ import statsmodels.api as sm
 import matplotlib.pyplot as plt
 
 # --- Page Configuration ---
+import streamlit as st
+
 st.set_page_config(
-    page_title="DSO Prediction and Simulation",
+    page_title="cbs DSO prediction and simulation  dashboard",
     page_icon="💼",
     layout="wide",
     initial_sidebar_state="expanded"
 )
+
+
+# Display logo at the top
+st.image("images/cbs_logo.png", width=100)  # adjust width as needed
+
 
 # --- Helper Functions ---
 def get_performance_metrics(y_true, y_pred):
@@ -152,7 +159,7 @@ with st.sidebar:
             st.success("Models trained successfully!")
 
 # --- Main Page ---
-st.title("💼 Days Sales Outstanding (DSO) Analysis")
+st.title("Days Sales Outstanding dashboard")
 st.markdown("An interactive tool to predict DSO, understand its key drivers, and simulate the impact of business decisions.")
 
 if st.session_state.data is None:
@@ -190,6 +197,15 @@ else:
             st.plotly_chart(fig_hist, use_container_width=True)
 
             # Correlation Matrix
+            
+            cbs_colorscale = [
+                [0.0, "#140101"],       # very dark gray, close to black (-1)
+                [0.3, "#76766F"],       # dark olive green-ish yellow (~ -0.4)
+                [0.5, "#f0ad5b"],       # light yellow (~ 0)
+                [0.7, "#bd4e0e"],       # light orange (~ 0.4)
+                [1.0, '#f37021'],       # corporate orange (1)
+            ]
+
             st.markdown("#### Correlation Heatmap")
             corr_df = df[st.session_state.features + [target_variable]]
             corr_matrix = corr_df.corr()
@@ -197,12 +213,11 @@ else:
                 z=corr_matrix.values,
                 x=corr_matrix.columns,
                 y=corr_matrix.columns,
-                colorscale='Viridis',
+                colorscale=cbs_colorscale,
                 colorbar=dict(title='Correlation')
             ))
             fig_heatmap.update_layout(title="Feature Correlation Matrix")
             st.plotly_chart(fig_heatmap, use_container_width=True)
-
 
         
     with tab2:
@@ -330,3 +345,4 @@ else:
                     st.warning(f"**This combination of changes could increase the average DSO by {avg_impact:.2f} days.**")
             else:
                 st.info("No significant change in average DSO with current simulation settings.")
+
