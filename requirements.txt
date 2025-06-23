@@ -7,3 +7,4 @@ plotly
 scikit-learn
 statsmodels
 matplotlib
+scipy==1.11.4
