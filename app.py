@@ -304,45 +304,72 @@ else:
         if not st.session_state.model_trained:
             st.info("Train the models in the sidebar to run simulations.")
         else:
-            st.markdown("Use the sliders to simulate changes to business drivers and see the potential impact on the average predicted DSO for the test set.")
-            X_test_modified = st.session_state.X_test.copy()
-            st.subheader("Simulation Controls")
+            df = st.session_state.data
+            X_test = st.session_state.X_test.copy()
             
-            simulation_cols = st.columns(3)
-            col_idx = 0
-            for feature in st.session_state.features:
-                with simulation_cols[col_idx % 3]:
-                    min_val = X_test_modified[feature].min()
-                    max_val = X_test_modified[feature].max()
-                    mean_val = X_test_modified[feature].mean()
-                    
-                    if min_val < 1 and max_val <= 1:
-                        change = st.slider(f"Change {feature} (pp)", -0.25, 0.25, 0.0, 0.01, key=f"sim_{feature}")
-                        X_test_modified[feature] += change
-                        X_test_modified[feature] = np.clip(X_test_modified[feature], 0, 1)
-                    else:
-                        change = st.slider(f"Change {feature} (days)", -int(mean_val), int(mean_val), 0, 1, key=f"sim_{feature}")
-                        X_test_modified[feature] += change
-                        X_test_modified[feature] = np.clip(X_test_modified[feature], 0, None)
-                col_idx += 1
+            # Assuming Region and Customer Segment exist in df and also in X_test or we join on index
+            # Join X_test with df to get these columns (if not already present in X_test)
+            if 'Region' not in X_test.columns or 'Customer Segment' not in X_test.columns:
+                X_test = X_test.join(df[['Region', 'Customer Segment']])
             
-            st.subheader("Simulation Results")
-
-            pred_before = st.session_state.xgb_model.predict(st.session_state.X_test)
-            pred_after = st.session_state.xgb_model.predict(X_test_modified)
-            avg_before = np.mean(pred_before)
-            avg_after = np.mean(pred_after)
-            avg_impact = avg_after - avg_before
+            # Filter UI controls
+            st.subheader("Filter simulation by Region and/or Customer Segment")
+            regions = ['All'] + sorted(X_test['Region'].dropna().unique().tolist())
+            segments = ['All'] + sorted(X_test['Customer Segment'].dropna().unique().tolist())
             
-            res_col1, res_col2, res_col3 = st.columns(3)
-            res_col1.metric("Original Avg. Predicted DSO", f"{avg_before:.2f} days")
-            res_col2.metric("Simulated Avg. Predicted DSO", f"{avg_after:.2f} days", delta=f"{avg_impact:.2f} days")
+            selected_region = st.selectbox("Select Region", regions)
+            selected_segment = st.selectbox("Select Customer Segment", segments)
             
-            if abs(avg_impact) > 0.01:
-                if avg_impact < 0:
-                    st.success(f"**This combination of changes could reduce the average DSO by {abs(avg_impact):.2f} days.**")
-                else:
-                    st.warning(f"**This combination of changes could increase the average DSO by {avg_impact:.2f} days.**")
+            # Apply filters
+            filtered_X_test = X_test.copy()
+            if selected_region != 'All':
+                filtered_X_test = filtered_X_test[filtered_X_test['Region'] == selected_region]
+            if selected_segment != 'All':
+                filtered_X_test = filtered_X_test[filtered_X_test['Customer Segment'] == selected_segment]
+            
+            if filtered_X_test.empty:
+                st.warning("No data available for the selected filters.")
             else:
-                st.info("No significant change in average DSO with current simulation settings.")
+                st.markdown(f"Simulating for {len(filtered_X_test)} observations after filtering.")
+                
+                # Remove 'Region' and 'Customer Segment' columns for model input if present
+                features_for_sim = [f for f in st.session_state.features if f not in ['Region', 'Customer Segment']]
+                X_test_modified = filtered_X_test[features_for_sim].copy()
+                
+                st.subheader("Simulation Controls")
+                simulation_cols = st.columns(3)
+                col_idx = 0
+                for feature in features_for_sim:
+                    with simulation_cols[col_idx % 3]:
+                        min_val = X_test_modified[feature].min()
+                        max_val = X_test_modified[feature].max()
+                        mean_val = X_test_modified[feature].mean()
 
+                        if min_val < 1 and max_val <= 1:
+                            change = st.slider(f"Change {feature} (pp)", -0.25, 0.25, 0.0, 0.01, key=f"sim_{feature}")
+                            X_test_modified[feature] += change
+                            X_test_modified[feature] = np.clip(X_test_modified[feature], 0, 1)
+                        else:
+                            change = st.slider(f"Change {feature} (days)", -int(mean_val), int(mean_val), 0, 1, key=f"sim_{feature}")
+                            X_test_modified[feature] += change
+                            X_test_modified[feature] = np.clip(X_test_modified[feature], 0, None)
+                    col_idx += 1
+
+                st.subheader("Simulation Results")
+                pred_before = st.session_state.xgb_model.predict(filtered_X_test[features_for_sim])
+                pred_after = st.session_state.xgb_model.predict(X_test_modified)
+                avg_before = np.mean(pred_before)
+                avg_after = np.mean(pred_after)
+                avg_impact = avg_after - avg_before
+
+                res_col1, res_col2, res_col3 = st.columns(3)
+                res_col1.metric("Original Avg. Predicted DSO", f"{avg_before:.2f} days")
+                res_col2.metric("Simulated Avg. Predicted DSO", f"{avg_after:.2f} days", delta=f"{avg_impact:.2f} days")
+
+                if abs(avg_impact) > 0.01:
+                    if avg_impact < 0:
+                        st.success(f"**This combination of changes could reduce the average DSO by {abs(avg_impact):.2f} days.**")
+                    else:
+                        st.warning(f"**This combination of changes could increase the average DSO by {avg_impact:.2f} days.**")
+                else:
+                    st.info("No significant change in average DSO with current simulation settings.")
