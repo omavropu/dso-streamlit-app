@@ -313,7 +313,7 @@ else:
                 X_test = X_test.join(df[['Region', 'Customer Segment']])
             
             # Filter UI controls
-            st.subheader("Filter simulation by Region and/or Customer Segment")
+            st.subheader("Filter by Region and/or Customer Segment")
             regions = ['All'] + sorted(X_test['Region'].dropna().unique().tolist())
             segments = ['All'] + sorted(X_test['Customer Segment'].dropna().unique().tolist())
             
